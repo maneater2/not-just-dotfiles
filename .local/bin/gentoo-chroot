@@ -1,0 +1,20 @@
+#!/bin/sh
+read MNT
+mount --types proc /proc $MNT/proc
+mount --rbind /sys $MNT/sys
+mount --make-rslave $MNT/sys
+mount --rbind /dev $MNT/dev
+mount --make-rslave $MNT/dev
+mount --bind /run $MNT/run
+mount --make-slave $MNT/run
+
+echo "make /dev/shm/ a tmpfs mount? this is recommended on non-gentoo installation media (y/n)"
+read answer
+if [ $answer = "y" ]; then 
+test -L /dev/shm && rm /dev/shm && mkdir /dev/shm
+mount --types tmpfs --options nosuid,nodev,noexec shm /dev/shm
+chmod 1777 /dev/shm /run/shm
+fi
+if [ $answer != "y" ]; then
+echo "not making /dev/shm/ a tmpfs mount..."
+fi

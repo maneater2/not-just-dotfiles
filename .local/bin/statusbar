@@ -1,0 +1,18 @@
+#!/bin/sh
+
+dayanddate () {
+	LC_TIME="lt_LT.UTF-8" date '+%G. %B. %e, %A'
+}
+
+battery () {
+	~/.local/bin/battery
+}
+
+timedate () {
+	date '+%I:%M:%S %p'
+}
+
+while :; do
+	xsetroot -name "$(dayanddate)"" ""$(battery)"" $(timedate)"
+    sleep 1
+done

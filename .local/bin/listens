@@ -1,0 +1,77 @@
+#!/bin/sh
+####################)-[options]-(####################
+LOOP=1 #amount of loops minus one for technical reasons
+SONGDIR="$HOME/music"
+#---------------------------------------------------#
+cd "$SONGDIR"
+
+#check if dependencies are installed
+dependency () {
+		printf ""$(echo "\033[31m")"This program requires $1 to run!"$(echo "")"\n"
+		[ "$1" = "vgmstream" ] && printf "Please install vgmstream from your system's package manager or another source! :("
+		[ "$1" = "mpv" ] && echo "Please install mpv! However, it will only be used for audio playback. Therefore a GUI is not required."
+}
+
+#play songs in alphabetical order
+inorder () {
+	SEQNUM=1
+	for x in $(seq $(ls -1 | wc -l)); do
+		SONG="$(command ls | head -n $SEQNUM | tail -n 1)"
+		playsong
+		SEQNUM=$(expr $SEQNUM + 1)
+	done
+}
+
+#fzf pull up and you! select a song.
+select_song () {
+	while true; do
+		SONG="$(command ls -1 | fzf --layout=reverse)"
+		playsong
+	done;
+}
+
+#just play a song forever tbh...
+forever () {
+	  SONG="$(command ls -1 | fzf --layout=reverse)"
+	  vgmstream-cli -m "$SONG" > /tmp/songinfo.txt
+	  STARTLOOP="$(grep "seconds" /tmp/songinfo.txt | head -n 1 | sed 's/.*(//' | sed 's/ seconds)//')"
+	  ENDLOOP="$(grep "seconds" /tmp/songinfo.txt | tail -n 1 | sed 's/.*(//' | sed 's/ seconds)//')"
+	  SONGTITLE="$(echo $SONG | sed 's/\.flac//' | sed 's/\.mp3//')"
+	  echo "Now playing: \"$SONGTITLE\""
+	  echo -ne "\033]0;$SONGTITLE\007"
+	  mpv ab-loop-a="$STARTLOOP" --ab-loop-b="$ENDLOOP" --loop-file=inf "$SONG"
+}
+
+#play $SONG
+playsong () {
+	vgmstream-cli -m "$SONG" > /tmp/songinfo.txt
+	STARTLOOP="$(grep "seconds" /tmp/songinfo.txt | head -n 1 | sed 's/.*(//' | sed 's/ seconds)//')"
+	ENDLOOP="$(grep "seconds" /tmp/songinfo.txt | tail -n 1 | sed 's/.*(//' | sed 's/ seconds)//')"
+	SONGTITLE="$(echo $SONG | sed 's/\.flac//' | sed 's/\.mp3//')"
+	echo "Now playing: \"$SONGTITLE\""
+	echo -ne "\033]0;$SONGTITLE\007"
+	mpv --ab-loop-a=$STARTLOOP --ab-loop-b="$ENDLOOP" --ab-loop-count="$LOOP" "$SONG"
+}
+
+random () {
+	while true; do
+		SONG="$(command ls | shuf -n 1)"
+		playsong
+	done
+}
+
+listens_help () {
+	printf 'Listens by Light\nusage: listen [flags]\n -f: Play selected song until user termination\n -h: Print this help message\n -r: Play random songs forever\n-io: Play all songs in alphabetical order\n -s: Select each song to play\n'
+}
+
+command -v vgmstream-cli > /dev/null || dependency vgmstream
+command -v mpv > /dev/null || dependency mpv
+case "$1" in
+	-f) forever ;;
+	-h) listens_help ;;
+	-io) inorder ;;
+	-s) select_song ;;
+	-r) random ;;
+	"") select_song ;;
+	*) listens_help ;;
+esac

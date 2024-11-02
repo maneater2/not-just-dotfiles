@@ -1,0 +1,7 @@
+export PATH="$PATH:$HOME/.local/bin"
+newlook
+picom &
+sxhkd &
+dwmblocks &
+plugcheck &
+exec dwm
